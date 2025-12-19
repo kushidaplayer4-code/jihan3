@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>超ひっかけ旗揚げゲーム</title>
+<style>
+  body {
+    text-align: center;
+    font-family: sans-serif;
+    background: #fafafa;
+  }
+  #order {
+    font-size: 24px;
+    margin: 20px;
+    min-height: 3em;
+  }
+  #score {
+    font-size: 20px;
+  }
+  img {
+    width: 300px;
+  }
+</style>
+</head>
+<body>
+
+<button id="start">スタート</button>
+<div id="score">スコア: 0</div>
+<div id="order">---</div>
+<img id="image" src="gyu1.jpg">
+
+<script>
+let currentRule = null;
+let score = 0;
+let interval = 2000;
+let playing = false;
+
+const orderEl = document.getElementById("order");
+const scoreEl = document.getElementById("score");
+const imgEl = document.getElementById("image");
+
+const trickyOrders = [
+  { text: "赤あげて", answer: "red" },
+  { text: "白あげて", answer: "white" },
+  { text: "赤も白もあげて", answer: "both" },
+  {
+    text: "赤あげないと見せかけてあげるような気もしなくもない",
+    answer: "red"
+  },
+  {
+    text: "白をさげる気はないけど結果的にあがってる",
+    answer: "white"
+  },
+  {
+    text: "あげるかどうかはさておき最終的に全部あがっている",
+    answer: "both"
+  }
+];
+
+document.getElementById("start").onclick = async () => {
+  if (
+    typeof DeviceOrientationEvent !== "undefined" &&
+    typeof DeviceOrientationEvent.requestPermission === "function"
+  ) {
+    const p = await DeviceOrientationEvent.requestPermission();
+    if (p !== "granted") return;
+  }
+
+  playing = true;
+  score = 0;
+  interval = 2000;
+  scoreEl.textContent = "スコア: 0";
+  nextOrder();
+  window.addEventListener("deviceorientation", handleTilt);
+};
+
+function nextOrder() {
+  const o = trickyOrders[Math.floor(Math.random() * trickyOrders.length)];
+  currentRule = o.answer;
+  orderEl.textContent = o.text;
+}
+
+function handleTilt(e) {
+  if (!playing) return;
+
+  const g = e.gamma;
+  let state = "none";
+
+  // ★ 左が赤、右が白
+  if (g < -25) state = "both";
+  else if (g < -15) state = "red";
+  else if (g > 25) state = "both";
+  else if (g > 15) state = "white";
+
+  updateImage(state);
+
+  if (state === currentRule) {
+    success();
+  }
+}
+
+function updateImage(state) {
+  if (state === "red") imgEl.src = "gyu3.jpg";
+  else if (state === "white") imgEl.src = "gyu2.jpg";
+  else if (state === "both") imgEl.src = "gyu4.jpg";
+  else imgEl.src = "gyu1.jpg";
+}
+
+function success() {
+  score++;
+  scoreEl.textContent = "スコア: " + score;
+
+  // 徐々に早くする
+  interval = Math.max(600, interval - 100);
+
+  setTimeout(nextOrder, interval);
+}
+</script>
+
+</body>
+</html>
